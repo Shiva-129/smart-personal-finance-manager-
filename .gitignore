@@ -1,0 +1,25 @@
+# Build
+build/
+cmake-build-*/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Compiled
+*.o
+*.obj
+*.exe
+*.out
+*.app
+
+# Dependencies (fetched by CMake)
+_deps/
