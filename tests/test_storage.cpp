@@ -7,8 +7,8 @@
 #include <filesystem>
 #include <fstream>
 
-#include "finance/models/User.h"
-#include "finance/storage/JsonRepository.h"
+#include "finance/Models.h"
+#include "finance/Storage.h"
 
 using namespace finance::storage;
 using namespace finance::models;

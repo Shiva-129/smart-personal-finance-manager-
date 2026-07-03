@@ -10,9 +10,9 @@
 #include <gtest/gtest.h>
 #include <filesystem>
 
-#include "finance/services/SearchEngine.h"
-#include "finance/storage/StorageManager.h"
-#include "finance/utils/UUID.h"
+#include "finance/Services.h"
+#include "finance/Storage.h"
+#include "finance/Utils.h"
 
 using namespace finance::services;
 using namespace finance::storage;

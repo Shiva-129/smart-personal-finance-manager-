@@ -4,9 +4,9 @@
  */
 
 #include <gtest/gtest.h>
-#include "finance/models/Account.h"
-#include "finance/utils/Exceptions.h"
-#include "finance/utils/UUID.h"
+#include "finance/Models.h"
+#include "finance/Utils.h"
+#include "finance/Utils.h"
 
 using namespace finance::models;
 using namespace finance::utils;

@@ -4,7 +4,7 @@
  */
 
 #include <gtest/gtest.h>
-#include "finance/models/Category.h"
+#include "finance/Models.h"
 
 using namespace finance::models;
 

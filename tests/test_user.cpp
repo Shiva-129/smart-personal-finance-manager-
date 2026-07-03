@@ -4,8 +4,8 @@
  */
 
 #include <gtest/gtest.h>
-#include "finance/models/User.h"
-#include "finance/utils/UUID.h"
+#include "finance/Models.h"
+#include "finance/Utils.h"
 
 using namespace finance::models;
 
