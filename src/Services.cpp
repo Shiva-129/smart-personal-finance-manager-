@@ -461,9 +461,9 @@ static bool containsIgnore(const std::string& hay, const std::string& needle) {
 }
 
 std::vector<models::Transaction*> SearchEngine::search(const std::string& userId, const Criteria& c) const {
-    auto all=storage_.loadTransactions();
+    cache_ = storage_.loadTransactions();
     std::vector<models::Transaction*> r;
-    for(auto& txn:all){
+    for(auto& txn:cache_){
         if(txn->userId()!=userId)continue;
         if(c.dateFrom&&txn->date()<*c.dateFrom)continue;
         if(c.dateTo&&txn->date()>*c.dateTo)continue;

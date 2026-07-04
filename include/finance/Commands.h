@@ -1,8 +1,6 @@
 #ifndef FINANCE_COMMANDS_H
 #define FINANCE_COMMANDS_H
 
-#include "FinanceManager.h"
-
 #include <map>
 #include <memory>
 #include <string>

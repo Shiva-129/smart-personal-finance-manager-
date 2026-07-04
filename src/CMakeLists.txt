@@ -5,7 +5,6 @@ set(FINANCE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Models.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Storage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Services.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Commands.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/CommandHandlers.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FinanceManager.cpp
 )

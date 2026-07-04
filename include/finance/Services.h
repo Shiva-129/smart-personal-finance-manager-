@@ -210,6 +210,7 @@ public:
 
 private:
     storage::StorageManager& storage_;
+    mutable std::vector<std::unique_ptr<models::Transaction>> cache_;
 };
 
 }  // namespace finance::services

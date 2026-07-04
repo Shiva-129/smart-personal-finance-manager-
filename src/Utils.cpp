@@ -118,7 +118,7 @@ void Logger::setLogFile(const std::string& p) {
 void Logger::log(LogLevel level, const std::string& msg) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (level < level_) return;
-    auto now = Clock::to_time_t(Clock::now());
+    auto now = DateUtils::Clock::to_time_t(DateUtils::Clock::now());
     auto tm = *std::localtime(&now);
     std::ostringstream oss;
     oss << std::put_time(&tm, "%Y-%m-%dT%H:%M:%S") << " [" << levelToString(level) << "] " << msg;

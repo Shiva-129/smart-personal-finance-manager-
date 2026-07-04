@@ -1,17 +1,65 @@
 #include "finance/Commands.h"
+#include "finance/FinanceManager.h"
 #include "finance/Utils.h"
 
+#include <algorithm>
 #include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
+
+namespace finance::commands {
+
+// ══════════════════════════════════════════════════════════════════════
+// CommandParser
+// ══════════════════════════════════════════════════════════════════════
+
+void CommandParser::registerCommand(std::unique_ptr<ICommand> cmd) {
+    if(cmd) commands_[cmd->name()]=std::move(cmd);
+}
+
+bool CommandParser::execute(const std::string& input) {
+    auto tokens=tokenize(input); if(tokens.empty())return true;
+    std::string name=tokens.front();
+    std::vector<std::string> args(tokens.begin()+1,tokens.end());
+    if(name=="exit"||name=="quit")return false;
+    if(name=="help"){printHelp();return true;}
+    auto it=commands_.find(name);
+    if(it==commands_.end()){std::cout<<"Unknown: "<<name<<"\nType 'help'.\n";return true;}
+    try{it->second->execute(args);}catch(const std::exception& e){std::cout<<"Error: "<<e.what()<<"\n";}
+    return true;
+}
+
+void CommandParser::printHelp() const {
+    std::cout<<"\n╔══════════════════════════════════════════╗\n║          Available Commands            ║\n╚══════════════════════════════════════════╝\n\n";
+    size_t max=0; for(auto&[n,c]:commands_)max=std::max(max,n.size());
+    for(auto&[n,c]:commands_){std::cout<<"  "<<n;for(size_t i=0;i<max-n.size()+2;++i)std::cout<<' ';std::cout<<c->description()<<"\n";}
+    std::cout<<"  help";for(size_t i=0;i<max+1;++i)std::cout<<' ';std::cout<<"Show this help\n";
+    std::cout<<"  exit";for(size_t i=0;i<max+1;++i)std::cout<<' ';std::cout<<"Exit\n";
+    std::cout<<std::endl;
+}
+
+std::vector<std::string> CommandParser::commandNames() const {
+    std::vector<std::string> n; for(auto&[k,v]:commands_)n.push_back(k); return n;
+}
+
+std::vector<std::string> CommandParser::tokenize(const std::string& input) {
+    std::vector<std::string> t; std::string cur; bool q=false;
+    for(char c:input){if(c=='"')q=!q;else if(c==' '&&!q){if(!cur.empty()){t.push_back(cur);cur.clear();}}else cur+=c;}
+    if(!cur.empty())t.push_back(cur); return t;
+}
+
+}  // namespace finance::commands
+
+// ══════════════════════════════════════════════════════════════════════
+// Command Handlers (24 commands)
+// ══════════════════════════════════════════════════════════════════════
 
 using namespace finance::services;
 using namespace finance::models;
 using namespace finance::utils;
 
-// ══════════════════════════════════════════════════════════════════════
-// 1.  REGISTER
-// ══════════════════════════════════════════════════════════════════════
+// ── 1. REGISTER ─────────────────────────────────────────────────────
 
 class RegisterCmd : public finance::commands::ICommand {
     AuthenticationService& a_;
@@ -27,9 +75,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 2.  LOGIN
-// ══════════════════════════════════════════════════════════════════════
+// ── 2. LOGIN ────────────────────────────────────────────────────────
 
 class LoginCmd : public finance::commands::ICommand {
     AuthenticationService& a_;
@@ -45,9 +91,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 3.  LOGOUT
-// ══════════════════════════════════════════════════════════════════════
+// ── 3. LOGOUT ───────────────────────────────────────────────────────
 
 class LogoutCmd : public finance::commands::ICommand {
     AuthenticationService& a_;
@@ -59,9 +103,7 @@ public:
     void execute(const std::vector<std::string>&) override { a_.logout(); std::cout<<"Logged out.\n"; }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 4.  CHANGE-PASSWORD
-// ══════════════════════════════════════════════════════════════════════
+// ── 4. CHANGE-PASSWORD ──────────────────────────────────────────────
 
 class ChangePwCmd : public finance::commands::ICommand {
     AuthenticationService& a_;
@@ -76,9 +118,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// Helper: check logged in
-// ══════════════════════════════════════════════════════════════════════
+// ── Helpers ─────────────────────────────────────────────────────────
 
 static bool requireLogin(AuthenticationService& a) {
     if(!a.isLoggedIn()){std::cout<<"Please login first.\n";return false;}
@@ -87,9 +127,7 @@ static bool requireLogin(AuthenticationService& a) {
 
 static std::string userId(AuthenticationService& a) { return a.currentUser()->id(); }
 
-// ══════════════════════════════════════════════════════════════════════
-// 5.  ADD-ACCOUNT
-// ══════════════════════════════════════════════════════════════════════
+// ── 5. ADD-ACCOUNT ──────────────────────────────────────────────────
 
 class AddAcctCmd : public finance::commands::ICommand {
     AuthenticationService& a_; AccountService& ac_;
@@ -105,9 +143,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 6.  LIST-ACCOUNTS
-// ══════════════════════════════════════════════════════════════════════
+// ── 6. LIST-ACCOUNTS ────────────────────────────────────────────────
 
 class ListAcctsCmd : public finance::commands::ICommand {
     AuthenticationService& a_; AccountService& ac_;
@@ -125,9 +161,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 7.  FREEZE-ACCOUNT
-// ══════════════════════════════════════════════════════════════════════
+// ── 7. FREEZE-ACCOUNT ───────────────────────────────────────────────
 
 class FreezeAcctCmd : public finance::commands::ICommand {
     AccountService& ac_;
@@ -141,9 +175,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 8.  CLOSE-ACCOUNT
-// ══════════════════════════════════════════════════════════════════════
+// ── 8. CLOSE-ACCOUNT ────────────────────────────────────────────────
 
 class CloseAcctCmd : public finance::commands::ICommand {
     AccountService& ac_;
@@ -157,9 +189,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 9.  ADD-INCOME
-// ══════════════════════════════════════════════════════════════════════
+// ── 9. ADD-INCOME ───────────────────────────────────────────────────
 
 class IncomeCmd : public finance::commands::ICommand {
     AuthenticationService& a_; TransactionService& t_;
@@ -175,9 +205,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 10. ADD-EXPENSE
-// ══════════════════════════════════════════════════════════════════════
+// ── 10. ADD-EXPENSE ─────────────────────────────────────────────────
 
 class ExpenseCmd : public finance::commands::ICommand {
     AuthenticationService& a_; TransactionService& t_;
@@ -193,9 +221,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 11. TRANSFER
-// ══════════════════════════════════════════════════════════════════════
+// ── 11. TRANSFER ────────────────────────────────────────────────────
 
 class TransferCmd : public finance::commands::ICommand {
     AuthenticationService& a_; TransactionService& t_;
@@ -210,9 +236,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 12. LIST-TRANSACTIONS
-// ══════════════════════════════════════════════════════════════════════
+// ── 12. LIST-TRANSACTIONS ───────────────────────────────────────────
 
 class ListTxnsCmd : public finance::commands::ICommand {
     AuthenticationService& a_; TransactionService& t_;
@@ -231,9 +255,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 13. EDIT-TRANSACTION
-// ══════════════════════════════════════════════════════════════════════
+// ── 13. EDIT-TRANSACTION ────────────────────────────────────────────
 
 class EditTxnCmd : public finance::commands::ICommand {
     TransactionService& t_;
@@ -248,9 +270,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 14. DELETE-TRANSACTION
-// ══════════════════════════════════════════════════════════════════════
+// ── 14. DELETE-TRANSACTION ──────────────────────────────────────────
 
 class DeleteTxnCmd : public finance::commands::ICommand {
     TransactionService& t_;
@@ -265,9 +285,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 15. UNDO
-// ══════════════════════════════════════════════════════════════════════
+// ── 15. UNDO ────────────────────────────────────────────────────────
 
 class UndoCmd : public finance::commands::ICommand {
     TransactionService& t_;
@@ -281,9 +299,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 16. SET-BUDGET
-// ══════════════════════════════════════════════════════════════════════
+// ── 16. SET-BUDGET ──────────────────────────────────────────────────
 
 class SetBudgetCmd : public finance::commands::ICommand {
     AuthenticationService& a_; BudgetService& b_;
@@ -302,9 +318,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 17. SHOW-BUDGET
-// ══════════════════════════════════════════════════════════════════════
+// ── 17. SHOW-BUDGET ─────────────────────────────────────────────────
 
 class ShowBudgetCmd : public finance::commands::ICommand {
     AuthenticationService& a_; BudgetService& b_;
@@ -325,9 +339,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 18. CREATE-GOAL
-// ══════════════════════════════════════════════════════════════════════
+// ── 18. CREATE-GOAL ─────────────────────────────────────────────────
 
 class CreateGoalCmd : public finance::commands::ICommand {
     AuthenticationService& a_; GoalService& g_;
@@ -343,9 +355,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 19. CONTRIBUTE-GOAL
-// ══════════════════════════════════════════════════════════════════════
+// ── 19. CONTRIBUTE-GOAL ─────────────────────────────────────────────
 
 class ContributeGoalCmd : public finance::commands::ICommand {
     GoalService& g_;
@@ -360,9 +370,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 20. SHOW-GOALS
-// ══════════════════════════════════════════════════════════════════════
+// ── 20. SHOW-GOALS ──────────────────────────────────────────────────
 
 class ShowGoalsCmd : public finance::commands::ICommand {
     AuthenticationService& a_; GoalService& g_;
@@ -380,9 +388,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 21. SHOW-NOTIFICATIONS
-// ══════════════════════════════════════════════════════════════════════
+// ── 21. NOTIFICATIONS ───────────────────────────────────────────────
 
 class NotifsCmd : public finance::commands::ICommand {
     AuthenticationService& a_; NotificationService& n_;
@@ -400,9 +406,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 22. SEARCH
-// ══════════════════════════════════════════════════════════════════════
+// ── 22. SEARCH ──────────────────────────────────────────────────────
 
 class SearchCmd : public finance::commands::ICommand {
     AuthenticationService& a_; SearchEngine& s_;
@@ -423,9 +427,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 23. GENERATE-REPORT
-// ══════════════════════════════════════════════════════════════════════
+// ── 23. REPORT ──────────────────────────────────────────────────────
 
 class GenReportCmd : public finance::commands::ICommand {
     AuthenticationService& a_; ReportGenerator& r_;
@@ -449,16 +451,14 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 24. EXPORT-REPORT
-// ══════════════════════════════════════════════════════════════════════
+// ── 24. EXPORT ──────────────────────────────────────────────────────
 
 class ExportReportCmd : public finance::commands::ICommand {
     AuthenticationService& a_; ReportGenerator& r_;
 public:
     ExportReportCmd(AuthenticationService& a, ReportGenerator& r) : a_(a), r_(r) {}
     std::string name() const override { return "export"; }
-    std::string description() const override { return "Export report to file: export <csv|json|txt> <daily|weekly|monthly|yearly> <file> [year] [month]"; }
+    std::string description() const override { return "Export report to file: export <csv|json|txt> <period> <file> [year] [month]"; }
     std::string usage() const override { return "export <csv|json|txt> <period> <file> [year] [month]"; }
     void execute(const std::vector<std::string>& a) override {
         if(!requireLogin(a_))return; if(a.size()<3){std::cout<<"Usage: "<<usage()<<"\n";return;}
@@ -476,9 +476,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// 25. PROCESS-RECURRING
-// ══════════════════════════════════════════════════════════════════════
+// ── 25. PROCESS-RECURRING ───────────────────────────────────────────
 
 class RecurringCmd : public finance::commands::ICommand {
     TransactionService& t_;
@@ -492,9 +490,7 @@ public:
     }
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// Registration
-// ══════════════════════════════════════════════════════════════════════
+// ── Registration ────────────────────────────────────────────────────
 
 namespace finance {
 

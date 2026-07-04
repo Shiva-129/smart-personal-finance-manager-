@@ -1,7 +1,6 @@
-/**
- * @file    test_storage.cpp
- * @brief   Unit tests for JsonRepository using a temporary file.
- */
+// ══════════════════════════════════════════════════════════════════════
+// test_storage_utils.cpp — Consolidated tests for Storage + Utils
+// ══════════════════════════════════════════════════════════════════════
 
 #include <gtest/gtest.h>
 #include <filesystem>
@@ -9,24 +8,80 @@
 
 #include "finance/Models.h"
 #include "finance/Storage.h"
+#include "finance/Utils.h"
 
 using namespace finance::storage;
 using namespace finance::models;
+using namespace finance::utils;
 
-/// Helper: path to a temporary test file.
+// ══════════════════════════════════════════════════════════════════════
+// UUID Tests
+// ══════════════════════════════════════════════════════════════════════
+
+TEST(UUIDTest, GenerateReturnsValidFormat) {
+    auto id = UUID::generate();
+    EXPECT_TRUE(UUID::isValid(id));
+    EXPECT_EQ(id.size(), 36UL);
+}
+
+TEST(UUIDTest, GenerateProducesUniqueIds) {
+    EXPECT_NE(UUID::generate(), UUID::generate());
+}
+
+TEST(UUIDTest, IsValidRejectsBadStrings) {
+    EXPECT_FALSE(UUID::isValid(""));
+    EXPECT_FALSE(UUID::isValid("not-a-uuid"));
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// DateUtils Tests
+// ══════════════════════════════════════════════════════════════════════
+
+TEST(DateUtilsTest, TodayReturnsValidFormat) {
+    auto t = DateUtils::today();
+    EXPECT_EQ(t.size(), 10UL);
+    EXPECT_EQ(t[4], '-');
+}
+
+TEST(DateUtilsTest, ParseInvalidDateReturnsDefault) {
+    auto tp = DateUtils::parseDate("not-a-date");
+    DateUtils::TimePoint defaultTp{};
+    EXPECT_EQ(tp, defaultTp);
+}
+
+TEST(DateUtilsTest, ExtractYMD) {
+    auto [y, m, d] = DateUtils::extractYMD("2026-07-04");
+    EXPECT_EQ(y, 2026); EXPECT_EQ(m, 7); EXPECT_EQ(d, 4);
+}
+
+TEST(DateUtilsTest, MonthName) {
+    EXPECT_EQ(DateUtils::monthName(1), "January");
+    EXPECT_EQ(DateUtils::monthName(13), "Unknown");
+}
+
+TEST(DateUtilsTest, DaysBetween) {
+    EXPECT_EQ(DateUtils::daysBetween("2026-01-01", "2026-01-10"), 9);
+}
+
+TEST(DateUtilsTest, IsFuture) {
+    EXPECT_TRUE(DateUtils::isFuture("2099-12-31"));
+    EXPECT_FALSE(DateUtils::isFuture("1999-01-01"));
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// JsonRepository<User> Tests
+// ══════════════════════════════════════════════════════════════════════
+
 static std::string tempPath(const char* name)
 {
     return std::string(std::filesystem::temp_directory_path()) + "/" + name;
 }
-
-// ── JsonRepository<User> Tests ──────────────────────────────────────
 
 class JsonRepositoryTest : public ::testing::Test {
 protected:
     void SetUp() override
     {
         path_ = tempPath("test_users.json");
-        // Clean up any leftover from a previous failed test.
         std::filesystem::remove(path_);
         repo_ = std::make_unique<JsonRepository<User>>(path_);
     }
@@ -106,7 +161,6 @@ TEST_F(JsonRepositoryTest, PersistsToDisk)
     User u("id_persist", "dave", "hash4", "Dave");
     repo_->save(u);
 
-    // Create a new repository reading the same file.
     JsonRepository<User> repo2(path_);
     EXPECT_EQ(repo2.count(), 1UL);
     auto opt = repo2.findById("id_persist");
@@ -142,12 +196,10 @@ TEST_F(JsonRepositoryTest, UpdateExistingItem)
 
 TEST_F(JsonRepositoryTest, HandlesCorruptedFile)
 {
-    // Write garbage to the file.
     std::ofstream ofs(path_);
     ofs << "this is not json";
     ofs.close();
 
-    // Should not throw — returns empty.
     EXPECT_NO_THROW({
         EXPECT_EQ(repo_->count(), 0UL);
     });

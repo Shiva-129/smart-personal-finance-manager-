@@ -7,7 +7,7 @@
  */
 
 #include "finance/FinanceManager.h"
-#include "finance/utils/Logger.h"
+#include "finance/Utils.h"
 
 int main()
 {
