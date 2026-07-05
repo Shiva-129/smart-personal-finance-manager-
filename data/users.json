@@ -1,0 +1,11 @@
+[
+  {
+    "created_at": "2026-07-04T20:34:41",
+    "display_name": "Alice",
+    "id": "fa3edac4-92d4-4107-a349-abdbe0cdd40b",
+    "is_active": true,
+    "last_login_at": "2026-07-04T20:34:45",
+    "password_hash": "82476e2b-ff0f-4d4c-a0aa-eab7e33509b2:d228261cc9db1d39",
+    "username": "alice"
+  }
+]
